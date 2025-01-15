@@ -1,4 +1,5 @@
 #pragma once
+#include "cJSON.h"
 #include "singleton.h"
 #include "Map.h"
 #include "wave.h"
@@ -108,7 +109,86 @@ public:
 	const double num_initial_coin = 100;
 	const double num_coin_per_prop = 10;
 
+  bool load_level_config(std::string& path) {
+    std::ifstream file(path);
 
+    if (!file.good()) return false;
+
+    std::stringstream str_stream;
+
+    str_stream << file.rdbuf(); file.close();
+
+    cJSON* json_root = cJSON_Parse(str_stream.str().c_str());
+
+    if (json_root->type != cJSON_Array) {
+      cJSON_Delete(json_root);
+      return false;
+    }
+
+    cJSON* json_wave = nullptr;
+
+    cJSON_ArrayForEach(json_wave, json_root) {
+      
+      if (json_wave->type != cJSON_Object)
+        continue;
+
+      wave_list.emplace_back();
+      Wave& wave = wave_list.back();
+
+      cJSON* json_wave_rewards = cJSON_GetObjectItem(json_wave, "rewards");
+      if (json_wave_rewards && json_wave_rewards->type == cJSON_Number)
+        wave.rawards = json_wave_rewards->valuedouble;
+
+      cJSON* json_wave_interval = cJSON_GetObjectItem(json_wave, "interval");
+      if (json_wave_interval && json_wave_interval->type == cJSON_Number)
+        wave.interal = json_wave_interval->valuedouble;
+
+      cJSON* json_wave_spawn_list = cJSON_GetObjectItem(json_wave, "spawn_list");
+      if (json_wave_spawn_list && json_wave_spawn_list->type == cJSON_Array)
+      {
+        cJSON* json_spawm_event = nullptr;
+        cJSON_ArrayForEach(json_spawm_event, json_wave_spawn_list) {
+          wave.spawn_enevt_list.emplace_back();
+          Wave::SpawnEnemy& spawm_enemy = wave.spawn_enevt_list.back();
+
+          cJSON* spawm_enemy_interval = cJSON_GetObjectItem(json_spawm_event, "interval");
+          if (spawm_enemy_interval && spawm_enemy_interval->type == cJSON_Number)
+            spawm_enemy.interval = spawm_enemy_interval->valuedouble;
+
+          cJSON* spawm_enemy_spawn_point = cJSON_GetObjectItem(json_spawm_event, "spawn_point");
+          if (spawm_enemy_spawn_point && spawm_enemy_spawn_point->type == cJSON_Number)
+            spawm_enemy.spawn_point = spawm_enemy_spawn_point->valuedouble;
+
+          cJSON* json_spawn_event_enemy_type = cJSON_GetObjectItem(json_spawm_event, "enemy_type");
+					if (json_spawn_event_enemy_type && json_spawn_event_enemy_type->type == cJSON_String)
+					{
+						const std::string str_enemy_type = json_spawn_event_enemy_type->valuestring;
+						if (str_enemy_type == "Slim")
+							spawm_enemy.enemy_type = EnemyType::Slim;
+						else if (str_enemy_type == "KingSlim")
+							spawm_enemy.enemy_type = EnemyType::KingSlim;
+						else if (str_enemy_type == "Skeleton")
+							spawm_enemy.enemy_type = EnemyType::Skeleton;
+						else if (str_enemy_type == "Goblin")
+							spawm_enemy.enemy_type = EnemyType::Goblin;
+						else if (str_enemy_type == "GoblinPriest")
+							spawm_enemy.enemy_type = EnemyType::GoblinPriest;
+					}
+
+        }
+				if (wave.spawn_enevt_list.empty()) {
+					cJSON_Delete(json_root);
+					return false;
+				}
+        return true;
+      }
+    }
+  
+  }
+
+  bool load_game_config(std::string& path) {
+
+  }
 private:
 	ConfigManager()  = default;
 	~ConfigManager() = default;
