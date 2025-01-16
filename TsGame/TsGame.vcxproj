@@ -135,9 +135,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\thirparty\cJSON\cJSON.c" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\thirparty\cJSON\include\cJSON.h" />
     <ClInclude Include="ConfigManager.h" />
     <ClInclude Include="enemy_type.h" />
     <ClInclude Include="GameManager.h" />

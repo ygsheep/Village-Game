@@ -176,14 +176,17 @@ public:
 					}
 
         }
-				if (wave.spawn_enevt_list.empty()) {
-					cJSON_Delete(json_root);
-					return false;
-				}
-        return true;
+
+        if (wave.spawn_enevt_list.empty())
+          wave_list.pop_back();
       }
+
+			cJSON_Delete(json_root);
+      if (wave_list.empty()) {
+        return false;
+      }
+			return true;
     }
-  
   }
 
   bool load_game_config(std::string& path) {
