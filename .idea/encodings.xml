@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/TsGame/ConfigManager.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/TsGame/include/Route.h" charset="GB2312" />
+    <file url="file://$PROJECT_DIR$/TsGame/include/game/GameManager.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/TsGame/include/game/Route.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/TsGame/include/game_manager.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/TsGame/include/render/Map.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/TsGame/include/render/Tile.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/TsGame/include/singleton.h" charset="GB2312" />
+    <file url="file://$PROJECT_DIR$/TsGame/include/utils/ConfigManager.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/TsGame/include/utils/singleton.h" charset="UTF-8" />
+  </component>
+</project>

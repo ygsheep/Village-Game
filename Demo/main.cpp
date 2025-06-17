@@ -1,167 +1,70 @@
-#define SDL_MAIN_HANDLED  // ¸æÖª SDL ²»ĞèÒªÌæ»»±ê×¼µÄ main º¯Êı£¬ÔÊĞí¿ª·¢ÕßÊ¹ÓÃ×Ô¶¨ÒåµÄ main º¯Êı¡£
+#include <iostream>
+#include <memory>
+#include <vector>
+#include <algorithm> // æ·»åŠ algorithmå¤´æ–‡ä»¶ç”¨äºremove_if
 
-#include <iostream>       // ±ê×¼ C++ ÊäÈëÊä³öÁ÷¿â£¬ÓÃÓÚ´òÓ¡µ÷ÊÔĞÅÏ¢µÈ¡£
-#include <string>
-#include <fstream>
-#include <sstream>
-#include "cJSON.h"
+using namespace std;
 
-#include <SDL.h>          // SDL ºËĞÄ¿â£¬Ìá¹©´°¿Ú¡¢ÊÂ¼şºÍÍ¼ĞÎµÈ¹¦ÄÜ¡£
-#include <SDL_image.h>    // SDL_image À©Õ¹¿â£¬ÓÃÓÚ¼ÓÔØºÍ´¦ÀíÍ¼Ïñ£¨Èç JPG¡¢PNG£©¡£
-#include <SDL_mixer.h>    // SDL_mixer À©Õ¹¿â£¬ÓÃÓÚ¼ÓÔØºÍ²¥·ÅÒôÆµ£¨Èç MP3£©¡£
-#include <SDL_ttf.h>      // SDL_ttf À©Õ¹¿â£¬ÓÃÓÚ¼ÓÔØºÍäÖÈ¾×ÖÌå¡£
-#include <SDL2_gfxPrimitives.h>
+struct Enemy {
+  double hp;
+  explicit Enemy(int hp) : hp(hp) {}
+};
 
+class EnemyManager {
+public:
+  using EnemyArray = vector<unique_ptr<Enemy>>;
+  EnemyArray enemy_array;
 
-void test_json() {
-	std::fstream file("test_json.json");
-	if (not file.good())
-		return;
+  EnemyManager() {
+    for (int i = 0; i < 10; ++i) {
+      enemy_array.push_back(make_unique<Enemy>(i * 100));
+    }
+  }
 
-	std::stringstream result;
-	result << file.rdbuf();
+  void printf_array() const {
+    for (const auto& item : enemy_array) {
+      if (item) cout << item->hp << " ";
+    }
+    cout << endl;
+  }
 
-	cJSON* json_root = cJSON_Parse(result.str().c_str());
+  // æ–°å¢ï¼šæ£€æµ‹å¹¶ç§»é™¤hp<=0çš„æ•Œäºº
+  void remove_dead_enemies() {
+    // ä½¿ç”¨"æ“¦é™¤-ç§»é™¤"æƒ¯ç”¨æ³•
+    auto new_end = remove_if(enemy_array.begin(), enemy_array.end(),
+        [](const unique_ptr<Enemy>& enemy) {
+            return enemy && enemy->hp <= 0;
+        });
 
-	cJSON* name = cJSON_GetObjectItem(json_root, "name");
-	cJSON* monery = cJSON_GetObjectItem(json_root, "monery");
+    // åˆ é™¤æ­»å»çš„æ•Œäºº
+    enemy_array.erase(new_end, enemy_array.end());
+  }
 
-	std::cout << name->string << " : " << name->valuestring << std::endl;
-	std::cout << monery->string << " : " << monery->valueint << std::endl;
+  // æ–°å¢ï¼šä¼¤å®³æ•Œäººï¼ˆç”¨äºæµ‹è¯•ï¼‰
+  void damage_enemy(size_t index, double damage) {
+    if (index < enemy_array.size() && enemy_array[index]) {
+      enemy_array[index]->hp -= damage;
+    }
+  }
+};
 
-}
+int main() {
+  EnemyManager e;
+  e.printf_array();
 
+  // æµ‹è¯•ï¼šä¼¤å®³ä¸€äº›æ•Œäºº
+  e.damage_enemy(0, 100);  // hpå˜ä¸º0
+  e.damage_enemy(3, 300);  // hpå˜ä¸º100 -> 0
+  e.damage_enemy(5, 600);  // hpå˜ä¸º500 -> -100
 
+  cout << "Before removing dead enemies: ";
+  e.printf_array();
 
-int main()
-{
-	test_json();
-	// ³õÊ¼»¯ SDL ºËĞÄ¿â£¬²ÎÊı SDL_INIT_EVERYTHING ±íÊ¾³õÊ¼»¯ËùÓĞ×ÓÏµÍ³£¨ÊÓÆµ¡¢ÒôÆµ¡¢¼ÆÊ±Æ÷µÈ£©¡£
-	SDL_Init(SDL_INIT_EVERYTHING);
+  // ç§»é™¤hp<=0çš„æ•Œäºº
+  e.remove_dead_enemies();
 
-	// ³õÊ¼»¯ SDL_image ¿â£¬²ÎÊı±íÊ¾Ö§³Ö JPG ºÍ PNG ¸ñÊ½µÄÍ¼Æ¬¼ÓÔØ¡£
-	IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG);
+  cout << "After removing dead enemies: ";
+  e.printf_array();
 
-	// ³õÊ¼»¯ SDL_mixer ¿â£¬²ÎÊı±íÊ¾Ö§³Ö MP3 ¸ñÊ½µÄÒôÆµ¡£
-	Mix_Init(MIX_INIT_MP3);
-
-	// ³õÊ¼»¯ SDL_ttf ¿â£¬ÓÃÓÚ×ÖÌåäÖÈ¾¡£
-	TTF_Init();
-
-	// ³õÊ¼»¯ÒôÆµÉè±¸£¬²ÉÑùÂÊÎª 44100Hz£¬¸ñÊ½ÎªÄ¬ÈÏ£¬Í¨µÀÊıÎª 2£¨Á¢ÌåÉù£©£¬»º³åÇø´óĞ¡Îª 2048 ×Ö½Ú¡£
-	Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
-
-	// ´´½¨Ò»¸ö´°¿Ú£¬±êÌâÎª¡°´°¿Ú¡±£¬¿í¶ÈÎª 1280£¬¸ß¶ÈÎª 720£¬ÏÔÊ¾ÔÚÆÁÄ»ÖĞĞÄ£¬´°¿ÚÄ£Ê½ÎªÏÔÊ¾£¨SDL_WINDOW_SHOWN£©¡£
-	SDL_Window* window = SDL_CreateWindow(
-		u8"´°¿Ú",                // ´°¿Ú±êÌâ£¬Ö§³Ö UTF-8 ±àÂë
-		SDL_WINDOWPOS_CENTERED,  // ´°¿ÚË®Æ½Î»ÖÃ£ºÆÁÄ»ÖĞĞÄ
-		SDL_WINDOWPOS_CENTERED,  // ´°¿Ú´¹Ö±Î»ÖÃ£ºÆÁÄ»ÖĞĞÄ
-		1280, 720,               // ´°¿Ú´óĞ¡£º1280x720
-		SDL_WINDOW_SHOWN         // ´°¿Ú±êÖ¾£ºÏÔÊ¾´°¿Ú
-	);
-
-	// ´´½¨Ò»¸ö SDL äÖÈ¾Æ÷£¬ÓÃÓÚÔÚ´°¿ÚÖĞ»æÖÆÍ¼ĞÎ¡£
-	SDL_Renderer* renderer = SDL_CreateRenderer(
-		window,                  // Ö¸ÏòÒÑ¾­´´½¨µÄ SDL_Window µÄÖ¸Õë£¬äÖÈ¾Æ÷»á½«Í¼Ïñ»æÖÆµ½¸Ã´°¿ÚÖĞ¡£
-		-1,                      // Ê¹ÓÃÄ¬ÈÏµÄÍ¼ĞÎÇı¶¯³ÌĞò£¨ÉèÖÃÎª -1 ±íÊ¾ÈÃ SDL ×Ô¶¯Ñ¡Ôñ×î¼ÑµÄÇı¶¯³ÌĞò£©¡£
-		SDL_RENDERER_ACCELERATED // äÖÈ¾Æ÷±êÖ¾£ºÊ¹ÓÃÓ²¼ş¼ÓËÙ¡£¿ÉÒÔÌá¸ßÍ¼ĞÎĞÔÄÜ£¨Èç¹ûÓ²¼şÖ§³Ö£©¡£
-	);
-
-	bool is_open = false;
-
-	SDL_Event event;
-	int fps = 60;
-
-	SDL_Surface* sur_face = IMG_Load("icon.jpeg");
-	SDL_Texture* text_ure = SDL_CreateTextureFromSurface(renderer, sur_face);
-
-	TTF_Font* font = TTF_OpenFont(u8"ipix.ttf", 18);
-	SDL_Color font_color = { 255, 0, 0, 255 };
-
-	SDL_Surface* sur_text = TTF_RenderUTF8_Blended(font, u8"±Ä±ÄÕ¨µ¯", font_color);
-	SDL_Texture* font_ure = SDL_CreateTextureFromSurface(renderer, sur_text);
-
-	Mix_Music* music = Mix_LoadMUS(u8"music.mp3");
-	Mix_FadeInMusic(music, 1, 1500);
-
-	Uint64 last_counter = SDL_GetPerformanceCounter();
-	Uint64 counter_fred = SDL_GetPerformanceFrequency();
-
-
-	SDL_Point pos_cursor = { 0, 0 };
-	SDL_Rect rect_img, rect_text;
-	rect_img.w = sur_face->w / 2;
-	rect_img.h = sur_face->h / 2;
-
-	rect_text.w = sur_text->w;
-	rect_text.h = sur_text->h;
-
-
-	while (!is_open)
-	{
-
-		while (SDL_PollEvent(&event))
-		{
-			if (event.type == SDL_QUIT)
-			{
-				is_open = true;
-			}
-			else if (event.type == SDL_MOUSEMOTION)
-			{
-				pos_cursor.x = event.motion.x;
-				pos_cursor.y = event.motion.y;
-			}
-		}
-
-		Uint64 current_counter = SDL_GetPerformanceCounter();
-		double delta = (double)(current_counter - last_counter);
-		current_counter = last_counter;
-		if (delta * 1000 < 1000.0 / fps)
-			SDL_Delay((Uint32)(1000.0 / fps - delta * 1000));
-
-
-		// ´¦ÀíÊı¾İ
-		rect_img.x = pos_cursor.x - rect_img.w / 2;
-		rect_img.y = pos_cursor.y - rect_img.h / 2;
-
-		rect_text.x = pos_cursor.x;
-		rect_text.y = pos_cursor.y;
-
-		// äÖÈ¾»æÍ¼
-		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-		SDL_RenderClear(renderer);
-
-		SDL_RenderCopy(renderer, text_ure, nullptr, &rect_img);
-		filledCircleRGBA(renderer, pos_cursor.x, pos_cursor.y, 20, 0, 255, 0, 150);
-
-		SDL_RenderCopy(renderer, font_ure, nullptr, &rect_text);
-
-		SDL_RenderPresent(renderer);
-
-	}
-
-
-
-
-
-
-	// ÇåÀí SDL Ïà¹Ø×ÊÔ´£¬±ÜÃâÄÚ´æĞ¹Â©»ò×ÊÔ´Õ¼ÓÃ¡£
-
-	// Ïú»Ù´°¿Ú×ÊÔ´£¬ÊÍ·ÅÄÚ´æ¡£
-	SDL_DestroyWindow(window);
-
-	// ¹Ø±Õ SDL_ttf ¿â£¬ÊÍ·Å×ÖÌåäÖÈ¾Ïà¹Ø×ÊÔ´¡£
-	TTF_Quit();
-
-	// ¹Ø±Õ SDL_mixer ¿â£¬ÊÍ·ÅÒôÆµÏà¹Ø×ÊÔ´¡£
-	Mix_Quit();
-
-	// ¹Ø±Õ SDL_image ¿â£¬ÊÍ·ÅÍ¼Ïñ¼ÓÔØÏà¹Ø×ÊÔ´¡£
-	IMG_Quit();
-
-	// ¹Ø±Õ SDL ºËĞÄ¿â£¬ÊÍ·ÅËùÓĞ SDL ³õÊ¼»¯µÄÏµÍ³×ÊÔ´¡£
-	SDL_Quit();
-
-	// ·µ»Ø 0 ±íÊ¾³ÌĞòÕı³£ÍË³ö¡£
-	return 0;
+  return 0;
 }
